@@ -1,0 +1,34 @@
+{
+  "name": "gpt-news",
+  "version": "1.0.0",
+  "description": "Truth-First Global Intelligence Platform - AI-powered news aggregation and analysis",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx live-server --port=3000 --open=/index.html --cors",
+    "dev": "npx live-server --port=3000 --open=/index.html --cors --watch=src/",
+    "preview": "python3 -m http.server 8080",
+    "build": "echo 'No build process needed for this static application'",
+    "clean": "rm -rf node_modules && npm install"
+  },
+  "keywords": [
+    "news",
+    "ai",
+    "gpt",
+    "openai",
+    "news-aggregation",
+    "fact-checking",
+    "global-news"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "."
+  }
+}
