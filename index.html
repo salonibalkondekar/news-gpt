@@ -21,17 +21,21 @@
             </p>
             <div class="live-badge">
                 <div class="live-indicator"></div>
-                LIVE: Powered by OpenAI Search
+                LIVE: Powered by OpenAI Web Search
             </div>
+            <p class="search-info">
+                🔍 Using advanced web search with real-time source citations
+            </p>
         </header>
 
         <div class="control-panel">
             <button id="fetchNews" class="fetch-button">
                 🚀 Fetch Live Global Intelligence
             </button>
-            <button id="clearCache" class="clear-cache-button" title="Clear cached news data">
-                🗑️ Clear Cache
-            </button>
+            <div id="cacheStatus" class="cache-status" style="display: none;">
+                <span class="cache-info"></span>
+                <button id="clearCache" class="clear-cache-btn" title="Double-click main button to force refresh">🗑️</button>
+            </div>
         </div>
 
         <div class="category-filter">
@@ -50,21 +54,6 @@
         </div>
 
         <div id="error" class="error"></div>
-
-        <div class="stats-bar" id="statsBar" style="display: none;">
-            <div class="stat-item">
-                <span class="stat-number" id="totalNews">0</span>
-                <span class="stat-label">News Analyzed</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number" id="citationsCount">0</span>
-                <span class="stat-label">Sources Cited</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number" id="searchTime">0s</span>
-                <span class="stat-label">Search Time</span>
-            </div>
-        </div>
 
         <div id="newsSections" class="news-sections"></div>
     </div>

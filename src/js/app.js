@@ -1,6 +1,6 @@
 // GPT-News Application Configuration
 // Import global config
-import '../../../config.js';
+import './config.js';
 
 // Debug logging utility
 const DEBUG = window.GPT_NEWS_CONFIG?.DEBUG || true;
@@ -16,8 +16,36 @@ function log(message, data = null) {
 }
 
 // API Configuration
+// Try multiple sources for API key in priority order
+function getAPIKey() {
+    // 1. Client-side config.js file
+    if (window.GPT_NEWS_CONFIG?.OPENAI_API_KEY && window.GPT_NEWS_CONFIG.OPENAI_API_KEY !== "your-api-key-here") {
+        return window.GPT_NEWS_CONFIG.OPENAI_API_KEY;
+    }
+    
+    // 2. Global window variable (set via console or script)
+    if (window.OPENAI_API_KEY && window.OPENAI_API_KEY !== "your-api-key-here") {
+        return window.OPENAI_API_KEY;
+    }
+    
+    // 3. Check localStorage for development
+    const stored = localStorage.getItem('OPENAI_API_KEY');
+    if (stored && stored !== "your-api-key-here") {
+        return stored;
+    }
+    
+    return null;
+}
+
 const API_BASE_URL = window.GPT_NEWS_CONFIG?.OPENAI_API_BASE || 'https://api.openai.com/v1';
-const API_KEY = window.GPT_NEWS_CONFIG?.OPENAI_API_KEY;
+let API_KEY = getAPIKey();
+
+// Function to set API key at runtime
+function setAPIKey(key) {
+    API_KEY = key;
+    localStorage.setItem('OPENAI_API_KEY', key);
+    console.log('API key updated for this session');
+}
 
 // News categories configuration
 const categories = {
@@ -130,8 +158,11 @@ const newsSchema = {
 let currentFilter = 'all';
 let newsData = {};
 let searchStartTime = 0;
-let lastFetchTime = 0;
+
+// Cache management constants
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const CACHE_KEY_PREFIX = 'gpt_news_cache_';
+const CACHE_TIMESTAMP_KEY = 'gpt_news_cache_timestamp';
 
 // Utility functions
 function updateLoadingStage(stage) {
@@ -142,71 +173,94 @@ function updateLoadingStage(stage) {
 }
 
 // Cache management functions
-function saveToCache(data) {
-    const cacheData = {
-        newsData: data,
-        timestamp: Date.now()
-    };
-    localStorage.setItem('gpt-news-cache', JSON.stringify(cacheData));
-    lastFetchTime = Date.now();
+function isCacheValid() {
+    const cacheTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    if (!cacheTimestamp) {
+        log('No cache timestamp found');
+        return false;
+    }
+    
+    const lastFetch = parseInt(cacheTimestamp);
+    const now = Date.now();
+    const isValid = (now - lastFetch) < CACHE_DURATION;
+    
+    log(`Cache check: ${isValid ? 'VALID' : 'EXPIRED'}`, {
+        lastFetch: new Date(lastFetch).toLocaleString(),
+        now: new Date(now).toLocaleString(),
+        ageHours: Math.round((now - lastFetch) / (60 * 60 * 1000) * 10) / 10
+    });
+    
+    return isValid;
 }
 
-function loadFromCache() {
+function getCachedNews() {
+    if (!isCacheValid()) {
+        return null;
+    }
+    
     try {
-        const cacheString = localStorage.getItem('gpt-news-cache');
-        if (!cacheString) return null;
+        const cachedData = {};
+        for (const categoryKey of Object.keys(categories)) {
+            const cached = localStorage.getItem(CACHE_KEY_PREFIX + categoryKey);
+            if (cached) {
+                cachedData[categoryKey] = JSON.parse(cached);
+            }
+        }
         
-        const cacheData = JSON.parse(cacheString);
-        const age = Date.now() - cacheData.timestamp;
-        
-        if (age < CACHE_DURATION) {
-            lastFetchTime = cacheData.timestamp;
-            return cacheData.newsData;
-        } else {
-            // Cache expired, remove it
-            localStorage.removeItem('gpt-news-cache');
-            return null;
+        if (Object.keys(cachedData).length > 0) {
+            log('Retrieved cached news data', cachedData);
+            return cachedData;
         }
     } catch (error) {
-        console.error('Error loading cache:', error);
-        localStorage.removeItem('gpt-news-cache');
-        return null;
+        log('Error retrieving cached data:', error);
+        clearCache();
+    }
+    
+    return null;
+}
+
+function setCachedNews(data) {
+    try {
+        // Store timestamp
+        localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+        
+        // Store each category's data
+        Object.entries(data).forEach(([categoryKey, categoryData]) => {
+            localStorage.setItem(CACHE_KEY_PREFIX + categoryKey, JSON.stringify(categoryData));
+        });
+        
+        log('News data cached successfully', {
+            categories: Object.keys(data),
+            timestamp: new Date().toLocaleString()
+        });
+    } catch (error) {
+        log('Error caching news data:', error);
+        // If storage is full, clear cache and try again
+        clearCache();
+        try {
+            localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+            Object.entries(data).forEach(([categoryKey, categoryData]) => {
+                localStorage.setItem(CACHE_KEY_PREFIX + categoryKey, JSON.stringify(categoryData));
+            });
+        } catch (retryError) {
+            log('Failed to cache after clearing:', retryError);
+        }
     }
 }
 
 function clearCache() {
-    localStorage.removeItem('gpt-news-cache');
-    lastFetchTime = 0;
-    newsData = {};
-    document.getElementById('newsSections').innerHTML = '';
-    document.getElementById('statsBar').style.display = 'none';
-    updateFetchButtonText();
-    log('Cache cleared successfully');
-}
-
-function getCacheTimeRemaining() {
-    if (!lastFetchTime) return 0;
-    const elapsed = Date.now() - lastFetchTime;
-    const remaining = CACHE_DURATION - elapsed;
-    return Math.max(0, remaining);
-}
-
-function formatTimeRemaining(milliseconds) {
-    const hours = Math.floor(milliseconds / (1000 * 60 * 60));
-    const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
-}
-
-function updateFetchButtonText() {
-    const fetchButton = document.getElementById('fetchNews');
-    const timeRemaining = getCacheTimeRemaining();
-    
-    if (timeRemaining > 0) {
-        fetchButton.innerHTML = `📰 News Cached (${formatTimeRemaining(timeRemaining)} remaining)`;
-        fetchButton.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
-    } else {
-        fetchButton.innerHTML = '🚀 Fetch Live Global Intelligence';
-        fetchButton.style.background = 'linear-gradient(135deg, #00d4ff, #0099cc)';
+    try {
+        // Remove timestamp
+        localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+        
+        // Remove all cached category data
+        Object.keys(categories).forEach(categoryKey => {
+            localStorage.removeItem(CACHE_KEY_PREFIX + categoryKey);
+        });
+        
+        log('Cache cleared successfully');
+    } catch (error) {
+        log('Error clearing cache:', error);
     }
 }
 
@@ -215,93 +269,47 @@ async function searchCategoryNews(categoryKey, categoryInfo) {
     log(`Starting search for category: ${categoryKey}`, categoryInfo);
     updateLoadingStage(`Searching ${categoryInfo.title} news...`);
     
+    const { BACKEND_URL } = window.GPT_NEWS_CONFIG;
+    const NEWS_API_ENDPOINT = `${BACKEND_URL}/api/news`;
+
     try {
-        // Check if API key is available
-        if (!API_KEY || API_KEY.length < 20) {
-            throw new Error('Invalid or missing OpenAI API key. Please check your configuration.');
-        }
-        
         const query = categoryInfo.queries[0];
         log('Using search query:', query);
-        log('API Key length:', API_KEY.length);
-        log('API Base URL:', API_BASE_URL);
-        
-        const response = await fetch(`${API_BASE_URL}/chat/completions`, {
+        log('Contacting backend API at:', NEWS_API_ENDPOINT);
+
+        const response = await fetch(NEWS_API_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [
-                    {
-                        role: "system",
-                        content: `You are an expert news analyst. Search for and analyze the most important recent news in the ${categoryInfo.title} category. 
-
-                        REQUIREMENTS:
-                        - Find the most significant, recent news (within last 24-48 hours)
-                        - Focus on factual, verifiable information from credible sources
-                        - Provide clear, engaging summaries
-                        - Rate importance and relevance accurately
-                        - Include verification notes about source credibility
-                        
-                        Return exactly 2-3 of the most important stories in this category.`
-                    },
-                    {
-                        role: "user",
-                        content: `Find the most important recent news about: ${query}. Focus on today's or very recent significant events.`
-                    }
-                ],
-                response_format: {
-                    type: "json_schema",
-                    json_schema: {
-                        name: "category_news",
-                        schema: newsSchema,
-                        strict: true
-                    }
-                },
-                temperature: 0.3
+                category: categoryKey,
+                query: query
             })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            log('API Error Response Text:', errorText);
-            
+            log('Backend API Error Response Text:', errorText);
             let errorData;
             try {
                 errorData = JSON.parse(errorText);
             } catch (e) {
                 errorData = { error: { message: errorText } };
             }
-            
-            log('API Error Response:', errorData);
             throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        log('API Response Data:', data);
-        
-        const result = JSON.parse(data.choices[0].message.content);
+        const result = await response.json();
         log(`Parsed news data for ${categoryKey}:`, result);
-        
-        // Add citations from annotations
-        if (data.choices[0].message.annotations) {
-            result.citations = data.choices[0].message.annotations.map(annotation => ({
-                url: annotation.url_citation.url,
-                title: annotation.url_citation.title,
-                start_index: annotation.url_citation.start_index,
-                end_index: annotation.url_citation.end_index
-            }));
-            log('Added citations:', result.citations);
-        }
-        
+
+        // The backend now provides the citations and articles
         return result;
         
     } catch (error) {
         log(`Error in searchCategoryNews for ${categoryKey}:`, error);
         console.error(`Error fetching ${categoryKey} news:`, error);
+        
         return {
             category: categoryKey,
             articles: [],
@@ -313,44 +321,31 @@ async function searchCategoryNews(categoryKey, categoryInfo) {
 async function fetchNews() {
     log('Starting news fetch operation');
     
-    // Check if we have cached data first
-    const cachedData = loadFromCache();
-    if (cachedData && Object.keys(cachedData).length > 0) {
-        log('Using cached news data');
-        newsData = cachedData;
-        displayNews(newsData);
-        updateStats(newsData, true); // Pass true for cached data
-        updateFetchButtonText();
-        
-        // Show a brief message that cached data is being used
-        const loadingEl = document.getElementById('loading');
-        const loadingText = loadingEl.querySelector('.loading-text');
-        const originalText = loadingText.textContent;
-        
-        loadingEl.style.display = 'block';
-        loadingText.textContent = 'Loading cached news data...';
-        
-        setTimeout(() => {
-            loadingEl.style.display = 'none';
-            loadingText.textContent = originalText;
-        }, 1000);
-        
-        return;
-    }
-    
     const loadingEl = document.getElementById('loading');
     const errorEl = document.getElementById('error');
     const newsSectionsEl = document.getElementById('newsSections');
     const fetchButton = document.getElementById('fetchNews');
-    const statsBar = document.getElementById('statsBar');
+
+    // Check cache first
+    const cachedNews = getCachedNews();
+    if (cachedNews) {
+        log('Using cached news data');
+        newsData = cachedNews;
+        displayNews(newsData);
+        
+        // Update button text to show cached status
+        updateFetchButtonText('Fetch News');
+        
+        return;
+    }
 
     // Show loading state
     searchStartTime = Date.now();
     loadingEl.style.display = 'block';
     errorEl.style.display = 'none';
     newsSectionsEl.innerHTML = '';
-    statsBar.style.display = 'none';
     fetchButton.disabled = true;
+    updateFetchButtonText('Fetching News...');
 
     try {
         log('Initializing news search for all categories');
@@ -373,18 +368,18 @@ async function fetchNews() {
             newsData[categoryKey] = result;
         });
         log('Processed news data:', newsData);
-
-        // Save to cache
-        saveToCache(newsData);
+        
+        // Cache the new data
+        setCachedNews(newsData);
         
         displayNews(newsData);
-        updateStats(newsData, false); // Pass false for fresh data
-        updateFetchButtonText();
+        updateFetchButtonText('Fetch News');
         
     } catch (error) {
         log('Error in fetchNews:', error);
         console.error('Error fetching news:', error);
         showError(`Failed to fetch live news: ${error.message}`);
+        updateFetchButtonText('Fetch News');
     } finally {
         loadingEl.style.display = 'none';
         fetchButton.disabled = false;
@@ -422,7 +417,7 @@ function displayNews(data) {
                 </div>
             </div>
             <div class="news-grid">
-                ${categoryData.articles.map(article => createNewsCard(article, categoryData.citations)).join('')}
+                ${categoryData.articles.map(article => createNewsCard(article)).join('')}
             </div>
         `;
 
@@ -434,19 +429,6 @@ function displayNews(data) {
 function createNewsCard(article, citations = []) {
     const timestamp = new Date().toLocaleString();
     
-    const citationsHtml = citations && citations.length > 0 ? `
-        <div class="citations-section">
-            <div class="citations-title">
-                🔗 Sources & Citations
-            </div>
-            ${citations.map(citation => `
-                <a href="${citation.url}" target="_blank" rel="noopener noreferrer" class="citation-link">
-                    ${citation.title || citation.url}
-                </a>
-            `).join('')}
-        </div>
-    ` : '';
-
     return `
         <div class="news-card">
             <div class="news-header">
@@ -454,51 +436,15 @@ function createNewsCard(article, citations = []) {
             </div>
             <h3 class="news-title">${article.title}</h3>
             <p class="news-summary">${article.summary}</p>
-            ${citationsHtml}
             <div class="news-meta">
                 <div class="timestamp">Updated: ${timestamp}</div>
                 <div class="relevance-badge">Importance: ${article.importance}/5</div>
             </div>
-            <div style="margin-top: 15px; padding: 10px; background: rgba(67, 233, 123, 0.1); border-radius: 8px; font-size: 0.85rem; color: #43e97b;">
-                ✓ ${article.verification_note}
+            <div class="verification-note">
+                <small>📝 ${article.verification_note}</small>
             </div>
         </div>
     `;
-}
-
-function updateStats(data, isCached = false) {
-    log('Updating statistics');
-    const statsBar = document.getElementById('statsBar');
-    let searchTime;
-    
-    if (isCached) {
-        // For cached data, show instant load time
-        searchTime = 0;
-    } else {
-        // For fresh data, calculate actual search time
-        searchTime = Math.round((Date.now() - searchStartTime) / 1000);
-    }
-    
-    let totalNews = 0;
-    let totalCitations = 0;
-
-    Object.values(data).forEach(categoryData => {
-        if (categoryData.articles) {
-            totalNews += categoryData.articles.length;
-        }
-        if (categoryData.citations) {
-            totalCitations += categoryData.citations.length;
-        }
-    });
-
-    log('Stats calculated:', { totalNews, totalCitations, searchTime, isCached });
-
-    document.getElementById('totalNews').textContent = totalNews;
-    document.getElementById('citationsCount').textContent = totalCitations;
-    document.getElementById('searchTime').textContent = isCached ? 'Cached' : `${searchTime}s`;
-
-    statsBar.style.display = 'flex';
-    log('Statistics updated successfully');
 }
 
 function showError(message) {
@@ -508,10 +454,51 @@ function showError(message) {
     errorEl.style.display = 'block';
 }
 
+function updateFetchButtonText(text) {
+    const fetchButton = document.getElementById('fetchNews');
+    if (fetchButton) {
+        fetchButton.textContent = text;
+    }
+}
+
+function updateCacheStatus() {
+    const cacheStatusEl = document.getElementById('cacheStatus');
+    const cacheInfoEl = cacheStatusEl?.querySelector('.cache-info');
+    
+    if (!cacheStatusEl || !cacheInfoEl) return;
+    
+    const cacheTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+    if (cacheTimestamp && isCacheValid()) {
+        const cacheAge = Math.round((Date.now() - parseInt(cacheTimestamp)) / (60 * 60 * 1000) * 10) / 10;
+        const lastUpdate = new Date(parseInt(cacheTimestamp)).toLocaleString();
+        
+        cacheInfoEl.textContent = `Cached: ${cacheAge}h ago (${lastUpdate})`;
+        cacheStatusEl.style.display = 'flex';
+    } else {
+        cacheStatusEl.style.display = 'none';
+    }
+}
+
+// Force refresh function (bypasses cache)
+async function forceRefreshNews() {
+    log('Force refresh requested - clearing cache');
+    clearCache();
+    updateCacheStatus();
+    await fetchNews();
+}
+
 // Event handlers and initialization
 function initializeEventListeners() {
-    document.getElementById('fetchNews').addEventListener('click', fetchNews);
-    document.getElementById('clearCache').addEventListener('click', clearCache);
+    const fetchButton = document.getElementById('fetchNews');
+    
+    // Regular click for fetch (uses cache if available)
+    fetchButton.addEventListener('click', fetchNews);
+    
+    // Double-click for force refresh (bypasses cache)
+    fetchButton.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        forceRefreshNews();
+    });
 
     document.querySelectorAll('.category-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -527,26 +514,21 @@ function initializeEventListeners() {
 }
 
 function initializeApp() {
-    // Try to load cached data on page load
-    const cachedData = loadFromCache();
-    if (cachedData && Object.keys(cachedData).length > 0) {
-        newsData = cachedData;
+    // Initial app setup
+    log("News GPT Initialized");
+    
+    // Check for cached data on startup
+    const cachedNews = getCachedNews();
+    if (cachedNews) {
+        log('Loading cached news on startup');
+        newsData = cachedNews;
         displayNews(newsData);
-        updateStats(newsData, true); // Pass true for cached data on page load
+        
+        // Update button text to show cached status
+        updateFetchButtonText('Fetch News');
+    } else {
+        updateFetchButtonText('Fetch News');
     }
-    updateFetchButtonText();
-    
-    // Update button text every minute
-    setInterval(updateFetchButtonText, 60000);
-    
-    // Auto-refresh when cache expires (check every 5 minutes)
-    setInterval(() => {
-        const timeRemaining = getCacheTimeRemaining();
-        if (timeRemaining === 0 && Object.keys(newsData).length > 0) {
-            // Cache expired, but don't auto-fetch, just update button
-            updateFetchButtonText();
-        }
-    }, 5 * 60 * 1000);
 }
 
 // Initialize on page load
@@ -559,7 +541,9 @@ document.addEventListener('DOMContentLoaded', () => {
 export {
     fetchNews,
     displayNews,
-    clearCache,
     categories,
-    newsData
+    newsData,
+    forceRefreshNews,
+    clearCache,
+    isCacheValid
 };
