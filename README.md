@@ -8,26 +8,38 @@ A modern, AI-powered news aggregation platform that provides real-time global ne
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
 
 ## ✨ Features
 
 - 🤖 **AI-Powered Analysis** - Advanced news processing using OpenAI GPT models
-- � **Global Coverage** - Technology, Finance, Sports, Science, and Global Affairs
+- 🌍 **Global Coverage** - Technology, Finance, Sports, Science, and Global Affairs
 - ✅ **Fact-Checking** - Built-in verification and source credibility scoring
-- � **Responsive Design** - Beautiful, modern UI that works on all devices
+- 📱 **Responsive Design** - Beautiful, modern UI that works on all devices
 - ⚡ **Smart Caching** - 24-hour intelligent caching system for optimal performance
 - 🔍 **Source Citations** - Transparent source attribution and verification
 - 📊 **Real-time Stats** - Live statistics and performance metrics
 
-## 🚀 Quick Start
+## � Prerequisites
+
+- **Node.js** (v14.0.0 or higher) - for development server
+- **Modern web browser** with ES6 module support
+- **OpenAI API key** - get one from [OpenAI Platform](https://platform.openai.com/api-keys)
+
+## �🚀 Quick Start
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/news-gpt.git
+git clone https://github.com/yourusername/news-gpt.git
 cd news-gpt
 ```
 
-### 2. Configure API Key
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Configure API Key
 Create a `config.js` file in the root directory:
 ```javascript
 window.GPT_NEWS_CONFIG = {
@@ -39,14 +51,17 @@ window.GPT_NEWS_CONFIG = {
 
 > ⚠️ **Important**: Never commit your `config.js` file to version control. It's already added to `.gitignore`.
 
-### 3. Get Your OpenAI API Key
+### 4. Get Your OpenAI API Key
 1. Visit [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Create an account or log in
 3. Generate a new API key
 4. Copy the key and paste it into your `config.js` file
 
-### 4. Open the Application
-Simply open `index.html` in your web browser or serve it with a local server.
+### 5. Start the Development Server
+```bash
+npm run dev
+```
+This will start a local server at `http://localhost:3000` and automatically open the application in your browser.
 
 ## 📝 Configuration Options
 
@@ -68,41 +83,73 @@ window.OPENAI_API_KEY = "your-api-key-here";
 ## 🏗️ Project Structure
 
 ```
-gpt-news/
-├── index.html          # Main application (self-contained)
-├── favicon.svg         # Site favicon
-├── package.json        # Project configuration
-├── README.md          # This file
-└── .gitignore         # Git ignore rules
+news-gpt/
+├── index.html                # Main application entry point
+├── config.js                 # Configuration file (not in repo)
+├── .env.example              # Environment variables template
+├── package.json              # Project dependencies and scripts
+├── LICENSE                   # MIT license
+├── README.md                 # This file
+├── .gitignore               # Git ignore rules
+├── assets/
+│   └── favicon.svg          # Site favicon
+├── docs/                    # Documentation
+│   ├── DEPLOYMENT.md        # Deployment guide
+│   ├── PROJECT_STRUCTURE.md # Detailed project structure
+│   └── SETUP.md             # Setup instructions
+├── src/
+│   ├── css/
+│   │   └── styles.css       # Application styles
+│   └── js/
+│       ├── app.js           # Main application logic
+│       └── config.js        # Configuration module
+└── server/                  # Backend server (optional)
+    ├── .env                 # Server environment variables (not in repo)
+    └── package.json         # Server dependencies
 ```
 
 ## 🛠️ Technology Stack
 
 - **Frontend**: Pure HTML5, CSS3, JavaScript (ES6+)
+- **Development Server**: live-server with hot reload
 - **AI Integration**: OpenAI GPT API with structured output
 - **Styling**: Custom CSS with modern gradients and animations
-- **Architecture**: Single-page application with modular components
+- **Architecture**: Modular ES6 components
 - **Caching**: LocalStorage-based intelligent caching
+- **Backend** (Optional): Node.js Express server
 
-## 🔧 Configuration
+## 🔧 Development
+
+### Available Scripts
+
+- **`npm run dev`** - Start development server with hot reload on port 3000
+- **`npm start`** - Start production server on port 3000
+- **`npm run preview`** - Start Python HTTP server on port 8080 (alternative)
+- **`npm run clean`** - Clean and reinstall dependencies
 
 ### API Key Setup
 
 The application requires an OpenAI API key. You can configure it in several ways:
 
-1. **Environment Variable** (Most Secure)
+1. **config.js File** (Recommended)
+   ```javascript
+   window.GPT_NEWS_CONFIG = {
+       OPENAI_API_KEY: "your-api-key-here",
+       OPENAI_API_BASE: "https://api.openai.com/v1",
+       DEBUG: true
+   };
+   ```
+
+2. **Environment Variable** (Browser Console)
    ```javascript
    window.OPENAI_API_KEY = "your_key_here";
    ```
 
-2. **Direct Edit** (Development Only)
-   - Edit the `API_KEY` constant in `index.html`
-
 ### Customization
 
-- **Categories**: Modify the `categories` object in the script section
-- **Styling**: Update CSS variables in the `<style>` section
-- **Cache Duration**: Adjust `CACHE_DURATION` constant (default: 24 hours)
+- **Categories**: Modify the `categories` object in `src/js/app.js`
+- **Styling**: Update CSS variables in `src/css/styles.css`
+- **Cache Duration**: Adjust settings in `src/js/config.js`
 
 ## 📊 Features Overview
 
@@ -126,7 +173,7 @@ The application requires an OpenAI API key. You can configure it in several ways
 1. Push to GitHub repository
 2. Enable GitHub Pages in repository settings
 3. Select source branch (usually `main`)
-4. Your app will be available at `https://yourusername.github.io/gpt-news`
+4. Your app will be available at `https://yourusername.github.io/news-gpt`
 
 ### Netlify
 1. Connect your GitHub repository to Netlify
@@ -138,6 +185,14 @@ The application requires an OpenAI API key. You can configure it in several ways
 1. Connect repository to Vercel
 2. No build configuration needed
 3. Deploy automatically
+
+> **Note**: For production deployments, you'll need to configure API keys through environment variables or build-time configuration.
+
+## 📚 Documentation
+
+- [Setup Guide](docs/SETUP.md) - Detailed setup instructions
+- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment options
+- [Project Structure](docs/PROJECT_STRUCTURE.md) - Detailed project organization
 
 ## 🔐 Security Considerations
 
@@ -171,118 +226,4 @@ If you have questions or need help:
 
 ---
 
-**Made with ❤️ and AI** | [⭐ Star this repo](https://github.com/yourusername/gpt-news) if you find it useful!
-   - Click "📤 Export Context" to download a JSON file
-   - Contains all selected elements, comments, and page context
-   - Use this data with AI tools for deeper analysis
-
-### Development vs Production
-
-- **Development**: Stagewise toolbar is automatically loaded and visible
-- **Production**: Toolbar is completely disabled and doesn't load
-- **Detection**: Automatically detects localhost, file://, and custom ports
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (for development server)
-- Modern web browser with ES6 module support
-
-### Installation
-
-1. **Clone or download the project**
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**:
-   ```bash
-   npm run dev
-   ```
-   This will:
-   - Start a local server on http://localhost:3000
-   - Automatically open the application in your browser
-   - Enable the Stagewise toolbar for development
-
-### Alternative Development Methods
-
-**Using Python (if Node.js not available)**:
-```bash
-npm run preview
-# or directly:
-python3 -m http.server 8080
-```
-
-**Direct File Access**:
-- Open `index.html` directly in browser
-- Stagewise will detect file:// protocol and enable toolbar
-
-## Project Structure
-
-```
-├── index.html              # Main application file
-├── stagewise-toolbar.js    # Stagewise toolbar integration
-├── package.json           # Dependencies and scripts
-├── .vscode/
-│   └── extensions.json    # Recommended VS Code extensions
-└── README.md             # This file
-```
-
-## Stagewise Integration Details
-
-### Custom Implementation
-
-Since stagewise packages aren't yet available, this project includes a custom implementation that:
-
-- ✅ Provides element selection capabilities
-- ✅ Enables AI comment functionality  
-- ✅ Offers context export for AI analysis
-- ✅ Only loads in development mode
-- ✅ Includes modern UI with dark theme
-- ✅ Supports keyboard shortcuts (Escape to exit selection)
-
-### VS Code Extension
-
-The project includes the stagewise VS Code extension in the recommended extensions list (`.vscode/extensions.json`). Install it for enhanced development experience.
-
-## Usage Examples
-
-### Basic Development Workflow
-
-1. Start the dev server: `npm run dev`
-2. Open the application at http://localhost:3000
-3. Use the stagewise toolbar to:
-   - Select news cards or sections
-   - Add comments about UI improvements
-   - Export context for AI analysis
-   - Get suggestions for enhancements
-
-### AI-Powered Development
-
-1. Select multiple elements (e.g., all news cards)
-2. Add comment: "These cards need better loading states"
-3. Export context to get detailed element information
-4. Use exported data with AI tools for code generation
-
-## Troubleshooting
-
-### Stagewise Toolbar Not Appearing
-
-- Ensure you're running on localhost (not file://)
-- Check browser console for any JavaScript errors
-- Verify the development server is running on a custom port
-
-### Selection Mode Issues
-
-- Press `Escape` to exit selection mode
-- Refresh the page if selection gets stuck
-- Check that JavaScript modules are enabled in your browser
-
-## License
-
-MIT License - feel free to use and modify for your projects.
-
-Made by Saloni with ❤️ and AI
+**Made with ❤️ and AI by Saloni** | [⭐ Star this repo](https://github.com/yourusername/news-gpt) if you find it useful!
