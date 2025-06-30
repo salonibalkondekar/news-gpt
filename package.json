@@ -1,34 +1,31 @@
 {
-  "name": "gpt-news",
-  "version": "1.0.0",
-  "description": "Truth-First Global Intelligence Platform - AI-powered news aggregation and analysis",
-  "main": "index.html",
+  "name": "news-gpt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "npx live-server --port=3000 --open=/index.html --cors",
-    "dev": "npx live-server --port=3000 --open=/index.html --cors --watch=src/",
-    "preview": "python3 -m http.server 8080",
-    "build": "echo 'No build process needed for this static application'",
-    "clean": "rm -rf node_modules && npm install"
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [
-    "news",
-    "ai",
-    "gpt",
-    "openai",
-    "news-aggregation",
-    "fact-checking",
-    "global-news"
-  ],
-  "author": "",
-  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "lucide-react": "^0.525.0",
+    "next": "15.3.4",
+    "openai": "^5.8.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
   "devDependencies": {
-    "live-server": "^1.2.2"
-  },
-  "engines": {
-    "node": ">=14.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "."
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
