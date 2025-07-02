@@ -29,9 +29,9 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 # Copy built application from builder stage
-COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./
 
 # Set environment to production
 ENV NODE_ENV=production
@@ -39,5 +39,5 @@ ENV NODE_ENV=production
 # Expose port 3000
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application using the standalone server
+CMD ["node", "server.js"]
