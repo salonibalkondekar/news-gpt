@@ -1,0 +1,31 @@
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        - OPENAI_API_KEY=${OPENAI_API_KEY:-your-openai-api-key-here}
+    container_name: news-gpt-app
+    environment:
+      - NODE_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-your-openai-api-key-here}
+    networks:
+      - news-gpt-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: news-gpt-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - news-gpt-network
+    restart: unless-stopped
+
+networks:
+  news-gpt-network:
+    driver: bridge

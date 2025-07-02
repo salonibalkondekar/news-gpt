@@ -280,7 +280,7 @@ Focus on factual, recent information from credible news sources. Include diverse
       
       // Try API route first (server-side with proper API key)
       try {
-        const response = await fetch('/api/news', {
+        const response = await fetch('/news-gpt/api/news', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

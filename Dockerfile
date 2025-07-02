@@ -13,6 +13,10 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Set build-time environment variable
+ARG OPENAI_API_KEY
+ENV OPENAI_API_KEY=$OPENAI_API_KEY
+
 # Build the application
 RUN npm run build
 
