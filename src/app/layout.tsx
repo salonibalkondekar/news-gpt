@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   description: "AI-powered news aggregation platform with fact-checking, source verification, and real-time global news analysis",
   keywords: ["news", "AI", "GPT", "OpenAI", "fact-checking", "global news"],
   authors: [{ name: "GPT-News Team" }],
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export const viewport = {
